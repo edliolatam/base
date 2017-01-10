@@ -1,0 +1,634 @@
+// ------------------------------------------------------------
+// Base
+// ------------------------------------------------------------
+// This file contains mixins that are specifically related to Edlio code structure and naming conventions.	
+// Generic or more abstract mixins should be located in _mixins.scss
+
+
+// imports the standard QuickPoll styling
+@import url("/apps/js/polls/polls-pack.css");
+
+
+// define sticky sizes and behavior, should only be applied to HTML tag, if at all
+@mixin sticky-footer-layout {
+	height: 100%;
+	
+	@at-root {
+		body {
+			@include flex-all(column, null, null, null);
+			height: 100%;
+			margin: 0;
+			
+			&.index #content_main { @include flex-all(column, null, null, null); }
+		}
+		
+		#header_main,
+		#footer_main { @include flex(none); }
+		
+		#content_main { @include flex(1, 0, auto); }
+	}
+}
+
+// used in a link in the header to help screen readers bypass long navigation blocks
+@mixin skip-to-content {
+	@include hidden;
+	
+	&:focus {
+		position:absolute;
+		top: 0;
+		left: 0; 
+		width:auto; 
+		height:auto;
+		color: #fff;
+	}
+}
+
+// Initializes the core marquee functionality.
+// The speed variable determines the time it takes to make 1 loop, which is modified
+// by the speed derived from the class name.  Wider marquees will need longer durations.
+@mixin marquee-base($speed: 15) {
+	position: relative;
+	overflow: hidden;
+	
+	.marquee-inner {
+		position: absolute;
+		display: block;
+		width: 200%;
+		overflow: hidden;
+	}
+	
+	//medium
+	.marquee-speed-18 {
+		animation: marquee #{$speed}s linear infinite;
+	}
+	
+	//slow
+	.marquee-speed-35 {
+		$marqueespeed: $speed * 2;
+		animation: marquee #{$marqueespeed}s linear infinite;
+	}
+	
+	//fast
+	.marquee-speed-7 {
+		$marqueespeed: $speed * .5;
+		animation: marquee #{$marqueespeed}s linear infinite;
+	}
+	
+	.marquee-content { float: left; }
+	
+	@keyframes marquee {
+		0% { left: 100%; }
+		100% { left: -100%; }
+	}
+}
+
+// BASE mixin for site navigation that contains core drop-down mechanics for both standard AND megamenus layouts
+// width = maximum width in which to implement the mobile style of dropdown
+// id = the identifier of the ul for the dropdown
+// $indent-last = a boolean flag to determine whether to indent the last dropdown item and potentially keep it from going off the side of the page
+@mixin topnav-base($hamburger-color: $jack-white, $width: $vp-large, $mobile-id: "#topnav_mobile", $nav-id: "#topnav", $indent-last: true) {
+	width: 100%;
+	max-width: $site-width;
+	margin: 0 auto;
+	
+	#{$mobile-id} {
+		position: absolute;
+		display: block;
+		height: 4px;
+		width: 28px;
+		font-size: 0;
+		border-top: 14px double $hamburger-color;
+		border-bottom: 5px solid $hamburger-color;
+	}
+	
+	#{$nav-id} {
+		@include flex-all(column, null, null, null);
+		position: absolute;
+		width: 100%;
+		overflow: hidden;
+		max-height: 0;
+		transition: max-height 0.8s;
+		
+		&.open { max-height: 2000px; }
+	}
+	
+	a { text-decoration: none; }
+	
+	.level {
+		a {
+			padding: .5em;
+			font-size: 1em;
+		}
+		
+		&:hover > .level { display: block; }
+	}
+	
+	.first {
+		a {
+			@include flex-all(null, null, center, null);
+			width: 100%;
+		}
+
+		.level a { padding-left: 1.5em; }
+		.flyout a { padding-left: 2.25em; }
+	}
+
+	.second { display: none; }
+	
+	@include respond-to($width) {
+		position: relative;
+		
+		#{$mobile-id} {
+			display: none;
+		}
+		
+		#{$nav-id} {
+			@include flex-direction(row);
+			@include justify-content(center);
+			position: static;
+			max-height: none;
+			overflow: visible;
+			
+			@if $indent-last == true {
+				section:last-child:hover {
+					.dropdown {
+						left: auto;
+						right: 0;
+
+						.flyout {
+							right: 100%;
+							left: auto;
+						}
+					}
+				}
+			}
+		}
+		
+		.first {
+			> header,
+			a { width: auto; }
+			
+			&:hover > .dropdown {
+				display: block;
+				position: absolute;
+				left: 0;
+			}
+		}
+	}
+}
+
+// Mixin for doing standard site navigation drop-down menu
+// width = maximum width in which to implement the mobile style of dropdown
+// id = the identifier of the ul for the dropdown
+// $indent-last = a boolean flag to determine whether to indent the last dropdown item and potentially keep it from going off the side of the page
+@mixin topnav-standard($hamburger-color: $jack-white, $width: $vp-large, $mobile-id: "#topnav_mobile", $nav-id: "#topnav", $indent-last: true) {
+	@include topnav-base($hamburger-color, $width, $mobile-id, $nav-id, $indent-last);
+	
+	@include respond-to($width) {
+		
+		.first { 
+			position: relative; 
+			
+			.level {
+				width: 11.5em;
+				
+				a { padding-left: .5em; }
+			}
+		}
+		
+		.third {
+			position: relative;
+
+			&:hover .flyout { display: block; }
+		}
+
+		.flyout { 
+			position: absolute;
+			left: 100%;
+			top: 0;
+			display: none; 
+		}
+	}
+}
+
+// Mixin for doing standard 2-column + pic/text megamenus layout
+// width = maximum width in which to implement the mobile style of dropdown
+// id = the identifier of the ul for the dropdown
+// $indent-last = a boolean flag to determine whether to indent the last dropdown item and potentially keep it from going off the side of the page
+@mixin topnav-megamenu($hamburger-color: $jack-white, $width: $vp-large, $mobile-id: "#topnav_mobile", $nav-id: "#topnav", $indent-last: true) {
+	@include topnav-base($hamburger-color, $width, $mobile-id, $nav-id, $indent-last);
+	
+	@include respond-to($width) {
+		
+		.first:hover .second { @include flexbox; }
+		
+		.second { 
+			@include justify-content(space-between);
+			position: absolute;
+			right: 0;
+			padding: 20px;
+			width: 100%;
+			max-width: $width - 40px; 
+		}
+		
+		.column {
+			@include flex(1);
+		}
+		
+		.menu-blurb {
+			width: 40%;
+			margin-left: 15px;
+			
+			h2 { margin: 0; }
+			
+			.menu-image { width: 100%; }
+		}
+	}
+	
+	@include respond-to-max($width) {
+		.mm-extra-content { display: none; }
+	}
+}
+
+// basic header layout 
+@mixin header-main($site_width: $site-width, $header_height: auto) {
+	position: relative;
+	z-index: 99;
+	width: 100%;
+	max-width: $site_width;
+	height: $header_height;
+	margin: 0 auto;
+}
+
+// standard #content_main stuff
+@mixin content-main($width: $site-width, $horizontal-padding: 2.5%, $vertical-padding: 25px) {
+	@include width-constrain($width, $horizontal-padding * 2);
+	@include responsive-fix;
+	position: relative;
+	z-index: 9;
+	padding: $vertical-padding $horizontal-padding;
+	min-height: 400px;
+	overflow: visible;
+	
+	.index & {
+		width: 100%;
+		max-width: 100%;
+		padding: 0;
+		margin: 0;
+	}
+	
+	.pages-content-wrapper { overflow: visible; }
+	
+// remove default border from images uploaded on legacy pages, news items, and any older modules
+	img.sub { border: none; }
+}
+
+// name a certain number of sequentially named items and give them a background image that matches the pattern
+// e.g.
+// #qlink1 -> qlink1.jpg
+// #qlink2 -> qlink2.jpg
+// etc.
+@mixin sequential-bg($num, $name, $format: "png", $path: "/pics/") {
+	@for $i from 1 through $num {
+		&:nth-of-type(#{$i}) { background-image: url('#{$path}#{$name}#{$i}.#{$format}'); }
+	}
+}
+
+// name a group of specified items and give them a background image that matches the pattern
+// $name-list is a LIST of suffixes
+// e.g. $name-list: ("district", "es", "hs"), $name: "school"
+// #school_district -> school_district.jpg
+// #school_es -> school_es.jpg
+// #school_hs -> school_hs.jpg
+// etc.
+
+@mixin listed-bg($name-list, $name, $format: "png", $path: "/pics/") {
+	@each $item in $name-list {
+		&##{$name}_#{$item} { background-image: url('#{$path}#{$name}_#{$item}.#{$format}');}
+	}
+}
+
+// outputs the necessary code for a standard parallax bg shuffle.
+// requires a .image child that has the background-image of the desired shuffle image 
+// (current implementation adds this inline in the JSP)
+
+@mixin parallax-bg-image {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100vh;
+	
+	.image {
+		width: 100%;
+		height: 100%;
+		background: {
+			position: center center;
+			size: cover;
+		}
+	}
+}
+
+// hpcontainer basic styling
+@mixin hpcontainer-base {
+	margin: 0 0 1em;
+	
+	.section-title {
+		margin: 0;
+		font-weight: 400;
+		
+		a {
+			display: block;
+			width: auto;
+			margin: 0;
+			padding: 0;
+			text-decoration: none;
+			color: inherit;
+			
+			&:hover { text-decoration: none; }
+		}
+	}
+	
+	.read-more-link {
+		@include underline-link;
+		display: inline-block;
+	}
+}
+
+// structuring and styling of pageNav
+
+@mixin pagenav {
+	margin-bottom: 1.25em;
+	
+	@include respond-to-max($vp-mid) { margin: 20px auto; }
+
+	ul { 
+		@include stripped-list;
+		margin: 0;
+		padding: 0;
+	}
+	
+	a {
+		@include underline-link;
+		color: inherit;
+		display: block;
+		font-weight: 400;
+		padding: .8em 6% .8em 10%;
+		width: 84%;
+		margin: 0;
+		line-height: auto;
+		
+		.inner { @include underline-link; }
+	}
+}
+
+// wide footer layout base
+@mixin widefooter-base($width: $site-width, $height: auto, $inner_div: "#footer_inner") {
+	width: 100%;
+	height: $height;
+	
+	#{$inner_div} {
+		position: relative;
+		width: 100%;
+		max-width: $width;
+		height: $height;
+		margin: 0 auto;
+	}
+}
+
+// wide footer layout w/ backgrounds
+@mixin widefooter-background($bg_main: null, $bg_inner: null, $width: $site-width, $height: auto, $inner_div: "#footer_inner") {
+	@include widefooter-base($width, $height, $inner_div);
+	
+	@if ($bg_main != null) {
+		background: $bg_main;
+	}
+	
+	@if ($bg_inner != null) {
+		#{$inner_div} { background: $bg_inner; }
+	}
+}
+
+// basic address styling 
+@mixin footer-address-base {
+	font-style: normal;
+	
+	a {
+		color: inherit;
+		font-size: inherit;
+	}
+}
+
+// basic search styling 
+@mixin search-base($height: auto, $color: null) {
+	@include inline-flex;
+	height: $height;
+	
+	input#q {
+		margin: 0;
+		height: $height;
+		line-height: $height;
+		border: none;
+		vertical-align: top;
+		background: transparent;
+		-webkit-appearance: none;
+		box-sizing: content-box;
+	}
+	
+	.edlio-search-button { 
+		margin: 0 0 0 -4px; 
+		vertical-align: top;
+	}
+	
+	@if $color != null {
+		input#q { 
+			color: $color; 
+			
+			&::-webkit-input-placeholder { color: $color; }
+		}
+	}
+}
+
+// styles the standard admin login link
+
+@mixin edlio-login($normal-color, $hover-color) {
+	text-decoration: none;
+	color: $normal-color;
+	
+	svg {
+		width: 24px;
+		height: 16px;
+		fill: $normal-color;
+	}
+	
+	&:hover {
+		color: $hover-color;
+		
+		svg { fill: $hover-color; }
+	}
+}
+
+// standardized structure for mobile-only icon menu that is only visible at mobile sizes
+@mixin mobile-nav($background-color, $fill-color, $hover-color, $nav-height: 64px) {
+	@include flex-all(null, space-around, null, null);
+	position: fixed;
+	z-index: 999;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	height: $nav-height;
+	background: $background-color;
+	
+	a {
+		@include flex-all(column, center, center, null);
+		font-size: .75em;
+		text-decoration: none;
+		color: $fill-color;
+		
+		svg {
+			width: 28px;
+			height: 28px;
+			margin-bottom: 5px;
+			fill: $fill-color;
+		}
+		
+		&:hover {
+			color: $hover-color;
+			
+			svg { fill: $hover-color; }
+		}
+	}
+	
+	@include respond-to($vp-mid) { display: none; }
+	
+	@include respond-to-max($vp-mid) {
+		@at-root {
+			#footer_main { padding-bottom: $nav-height;}
+		}
+	}
+}
+
+// basic responsive fixes for content main 
+@mixin responsive-fix {
+
+	.pages-left-column-wrapper { overflow: hidden; }
+
+	@include respond-to-max($vp-large) {
+		table {
+			display: block;
+			overflow-x: auto;
+		}
+		
+		.bell-schedule { display: table; }
+		
+		.pages-column .stack-photo figcaption, 
+		.slideshow-wrapper .slide .slide-caption { font-size: .85em; }
+		
+		.video-list-top #controls2, 
+		.video-list-top #controls3 { width: auto; }
+		
+		#more-videos { display: none; }
+		
+		#staff_list_public .user-info-wrapper {
+			span[id*="staff"] { display: block; }
+			
+			.user-position-public {
+				display: block;
+				margin-left: 0;
+				width: 100%;
+			}
+			
+			p {
+				display: block;
+				float: left;
+				width: 100%;
+			}
+		}
+	}
+		
+	@include respond-to-max($vp-mid) {
+		.news-list article .column { width: 100%; }
+		
+		.show-news .attached-images {
+			float: none;
+			margin: 0 auto 1em;
+		}
+		
+		.single-video #big-video, 
+		.below-start #big-video { width: 100%!important; }
+		
+		.video-list {
+			.thumb_wrap {
+				display: block;
+				float: none;
+			}
+			
+			li {
+				.description { padding-left: 0; }
+				
+				.video-list-date { padding-left: 0; }
+			}
+		}
+		.bell-schedule { width: 100%; }
+		
+		.pages-column .stack-photo figcaption, 
+		.slideshow-wrapper .slide .slide-caption { font-size: .7em; }
+		
+		.video-list-top .controls, 
+		.video-list-top #controls2, 
+		.video-list-top #controls3 { display: none; }
+		
+		#album_thumbnails table img {
+			width: 90%; 
+			height: 90%;
+			position: relative; 
+		}
+		
+		#edlio_search_form {
+			max-width: 400px; 
+			width: auto;
+			
+			input { width: 200px; }
+		}
+		
+		#contact_form {
+			width: 100%;
+			
+			table {
+				display: table; 
+				font-size: 12px; width: 
+				280px!important; 
+			}
+			
+			#f_name { width: 200px!important; }
+			
+			#f_email { width: 200px!important; }
+			
+			#f_message { width: 200px!important; }
+		}
+		
+		#calendar_wrapper .right-column {
+			float: none;
+			width: 100%;
+			
+			#calendar_grid table { display: table; }
+		}
+		
+		.pages-column .page-block-text, 
+		.pages-column .page-block-photos { width: 100%; }
+		
+		.pages-left-column-wrapper {
+			margin-left: 0!important;
+			float: none;
+			
+			.pages-left-column { margin-left: 0!important; }
+		}
+		
+		.pages-right-column {
+			float: none;
+			width: 100%!important;
+			margin: 0 auto;
+			@include flex-all(column, null, null, null);
+		}
+	}
+}
